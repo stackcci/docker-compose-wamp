@@ -1,0 +1,67 @@
+version: "3"
+
+services:
+  webserver:
+    build:
+      context: ./bin/webserver
+    container_name: 'my-webserver'
+    restart: 'always'
+    ports:
+      - "88:80"
+      - "8443:443"
+    links:
+      - mysql
+    volumes:
+      - ${DOCUMENT_ROOT-./www}:/var/www/html
+      - ${PHP_INI-./config/php/php.ini}:/usr/local/etc/php/php.ini
+      - ${VHOSTS_DIR-./config/vhosts}:/etc/apache2/sites-enabled
+      - ${LOG_DIR-./logs/apache2}:/var/log/apache2
+    networks:
+      - web-db-net
+  mysql:
+    build: ./bin/mysql
+    container_name: 'my-mysql'
+    command: --default-authentication-plugin=mysql_native_password
+    restart: 'always'
+    ports:
+      - "3806:3306"
+    volumes:
+      - ${MYSQL_DATA_DIR-./data/mysql}:/var/lib/mysql
+      - ${MYSQL_LOG_DIR-./logs/mysql}:/var/log/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: testhaha2
+      MYSQL_USER: admin2
+      MYSQL_PASSWORD: 1234
+    networks:
+      - web-db-net
+  phpmyadmin:
+    #image: phpmyadmin/phpmyadmin
+    build: ./bin/phpmyadmin
+    container_name: 'my-phpmyadmin'
+    # links:
+    #   - mysql
+    environment:
+      #PMA_PASSWORD: 1234
+      #PMA_USER: root
+      PMA_HOST: mysql
+      #PMA_PORT: 3806
+    ports:
+      - '8880:80'
+    volumes:
+      - /sessions
+    networks:
+      - web-db-net
+  # adminer:
+    # image: adminer
+    # container_name: 'my-adminer'
+    # restart: always
+    # ports:
+      # - 8080:8080
+    # environment:
+      # ADMINER_DEFAULT_SERVER: mysql
+    # networks:
+      # - web-db-net
+
+networks:
+  web-db-net:
